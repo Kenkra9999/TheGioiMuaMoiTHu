@@ -113,10 +113,11 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.inset = '0';
     
-    while (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
     }
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
+    container.focus();
 
     // 4. Omnidirectional Lighting Rig (Zero pitch-black underside spots)
     EnvironmentGenerator.setupLighting(scene, dayNight);
@@ -259,8 +260,7 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
 
   // Touch / On-screen key simulator
   const sendKey = (key: string, isDown: boolean) => {
-    const event = new KeyboardEvent(isDown ? 'keydown' : 'keyup', { key, code: key });
-    window.dispatchEvent(event);
+    controllerRef.current?.setKey(key, isDown);
   };
 
   return (
@@ -268,7 +268,8 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
       {/* 3D Canvas Viewport */}
       <div 
         ref={containerRef} 
-        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" 
+        tabIndex={0}
+        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing outline-none" 
         style={{ width: '100vw', height: '100vh', position: 'absolute', inset: 0 }}
       />
         
