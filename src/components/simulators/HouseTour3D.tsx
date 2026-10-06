@@ -100,9 +100,10 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
   }, [isMusicPlaying]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const width = containerRef.current.clientWidth || window.innerWidth || 1280;
-    const height = containerRef.current.clientHeight || window.innerHeight || 720;
+    const container = containerRef.current;
+    if (!container) return;
+    const width = container.clientWidth || window.innerWidth || 1280;
+    const height = container.clientHeight || window.innerHeight || 720;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -483,8 +484,8 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
 
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
     };
   }, [lightingMode]);

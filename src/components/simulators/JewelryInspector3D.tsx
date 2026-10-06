@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { LuxuryItem } from '../../data/items';
 import { soundManager } from '../../utils/audio';
 import { 
-  ArrowLeft, RotateCw, ZoomIn, ZoomOut, Sparkles, 
-  ShieldCheck, Award, Eye, CheckCircle2, Clock
+  ArrowLeft, RotateCw, Sparkles, 
+  ShieldCheck, Award, Eye, CheckCircle2
 } from 'lucide-react';
 
 interface JewelryInspector3DProps {
@@ -49,9 +49,10 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
   }, [jCfg.type]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const width = containerRef.current.clientWidth || window.innerWidth || 1280;
-    const height = containerRef.current.clientHeight || window.innerHeight || 720;
+    const container = containerRef.current;
+    if (!container) return;
+    const width = container.clientWidth || window.innerWidth || 1280;
+    const height = container.clientHeight || window.innerHeight || 720;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -75,10 +76,10 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.inset = '0';
 
-    while (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
     }
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
     // 4. Lighting Setup (Multi-directional crystal sparkle)
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x64748b, 2.5);
@@ -375,11 +376,11 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
 
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
     };
-  }, [isRotating, isWearingOnWrist, item, jCfg]);
+  }, [isRotating, isWearingOnWrist, item]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#090b10] select-none overflow-hidden animate-fadeIn" style={{ width: '100vw', height: '100vh' }}>
@@ -398,7 +399,7 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
               soundManager.playClick();
               onClose();
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 text-amber-400" />
             <span className="font-semibold text-sm">Thoát Chiêm Ngưỡng</span>
@@ -422,9 +423,25 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
           <button
             onClick={() => {
               soundManager.playClick();
+              setIsRotating(!isRotating);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border backdrop-blur-md transition-all text-xs font-semibold cursor-pointer ${
+              isRotating
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                : 'bg-slate-900/80 text-slate-400 border-slate-700/60 hover:bg-slate-800'
+            }`}
+            title="Tự động xoay 360"
+          >
+            <RotateCw className="w-4 h-4" />
+            <span>{isRotating ? 'Xoay BẬT' : 'Xoay TẮT'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundManager.playClick();
               setShowCertificate(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 backdrop-blur-md transition-all text-xs font-semibold"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 backdrop-blur-md transition-all text-xs font-semibold cursor-pointer"
           >
             <Award className="w-4 h-4 text-amber-400" />
             <span>Chứng Thư Giám Định</span>
@@ -435,7 +452,7 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
               soundManager.playClick();
               setIsWearingOnWrist(!isWearingOnWrist);
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border backdrop-blur-md transition-all text-xs font-semibold ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border backdrop-blur-md transition-all text-xs font-semibold cursor-pointer ${
               isWearingOnWrist 
                 ? 'bg-amber-500 text-black border-amber-400 font-bold shadow-lg' 
                 : 'bg-slate-900/80 text-slate-200 border-slate-700/60 hover:bg-slate-800'
@@ -447,7 +464,7 @@ export const JewelryInspector3D: React.FC<JewelryInspector3DProps> = ({ item, on
 
           <button
             onClick={() => soundManager.playSparkle()}
-            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-400 border border-slate-700/60 backdrop-blur-md transition-all"
+            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-400 border border-slate-700/60 backdrop-blur-md transition-all cursor-pointer"
             title="Phát tia sáng lấp lánh"
           >
             <Sparkles className="w-5 h-5" />

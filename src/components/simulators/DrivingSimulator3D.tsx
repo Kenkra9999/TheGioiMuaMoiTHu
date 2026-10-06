@@ -75,10 +75,11 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
 
   // Three.js Scene Setup & Animation Loop
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
     
-    const width = containerRef.current.clientWidth || window.innerWidth || 1280;
-    const height = containerRef.current.clientHeight || window.innerHeight || 720;
+    const width = container.clientWidth || window.innerWidth || 1280;
+    const height = container.clientHeight || window.innerHeight || 720;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -250,11 +251,11 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       controllerRef.current?.dispose();
       renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
     };
-  }, [dayNight, isBike, isMuted, item, vehicleCfg, cameraMode]);
+  }, [dayNight, isBike, isMuted, item, cameraMode]);
 
   // Touch / On-screen key simulator
   const sendKey = (key: string, isDown: boolean) => {
