@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { LuxuryItem } from '../../data/items';
 import { soundManager } from '../../utils/audio';
+import { materialLib } from '../../3d/materials/MaterialLibrary';
 import { 
-  ArrowLeft, Eye, Sun, Sparkles, Volume2, VolumeX,
-  Compass, MapPin, Award, CheckCircle2, ShieldCheck, Home
+  ArrowLeft, Sun, Volume2, VolumeX,
+  Compass, MapPin, Award, ShieldCheck, Home
 } from 'lucide-react';
 
 interface HouseTour3DProps {
@@ -218,20 +219,14 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       scene.add(dirLight);
 
       // ==================== 1. LIVING ROOM ====================
-      // Floor: Polished Italian Calacatta Marble
       const marbleGeo = new THREE.PlaneGeometry(18, 18);
-      const marbleMat = new THREE.MeshStandardMaterial({
-        color: 0xf8fafc,
-        roughness: 0.1,
-        metalness: 0.15
-      });
-      const livingFloor = new THREE.Mesh(marbleGeo, marbleMat);
+      const livingFloor = new THREE.Mesh(marbleGeo, materialLib.getMarbleMaterial(0xf8fafc));
       livingFloor.rotation.x = -Math.PI / 2;
       livingFloor.position.set(0, 0, 4);
+      livingFloor.receiveShadow = true;
       scene.add(livingFloor);
 
-      // Ceiling with recessed warm LED perimeter glow
-      const ceilingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+      const ceilingMat = materialLib.getStuccoMaterial(0xffffff);
       const ceiling = new THREE.Mesh(marbleGeo, ceilingMat);
       ceiling.rotation.x = Math.PI / 2;
       ceiling.position.set(0, 4.2, 4);
@@ -239,7 +234,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
 
       // Grand Golden Chandelier
       const chandGeo = new THREE.CylinderGeometry(1.4, 0.5, 0.9, 24);
-      const chandMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.98, roughness: 0.05 });
+      const chandMat = materialLib.getMetalMaterial('gold');
       const chandelier = new THREE.Mesh(chandGeo, chandMat);
       chandelier.position.set(0, 3.8, 4);
       scene.add(chandelier);
@@ -249,18 +244,19 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       scene.add(chandLight);
       lights.push(chandLight);
 
-      // Walls: Warm Beige Velvet & Calacatta Stone
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.4 });
+      // Walls
+      const wallMat = materialLib.getWallMaterial(0xfef3c7, 0.4, 0.05);
       
       const backWallGeo = new THREE.BoxGeometry(18, 4.2, 0.4);
       const backWall = new THREE.Mesh(backWallGeo, wallMat);
       backWall.position.set(0, 2.1, -4);
+      backWall.receiveShadow = true;
       scene.add(backWall);
 
-      // 98" OLED TV displaying high-end digital art
+      // 98" OLED TV
       const tvScreen = new THREE.Mesh(
         new THREE.PlaneGeometry(6.2, 3.2), 
-        new THREE.MeshBasicMaterial({ color: isCyber ? 0x0284c7 : 0xf59e0b })
+        materialLib.getEmissiveMaterial(isCyber ? 0x0284c7 : 0xf59e0b)
       );
       tvScreen.position.set(0, 2.4, -3.78);
       scene.add(tvScreen);
@@ -268,48 +264,41 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       // Modern Linear LED Fireplace
       const fireplace = new THREE.Mesh(
         new THREE.BoxGeometry(5.0, 0.65, 0.6), 
-        new THREE.MeshBasicMaterial({ color: 0xf97316 })
+        materialLib.getEmissiveMaterial(0xf97316)
       );
       fireplace.position.set(0, 0.45, -3.65);
       scene.add(fireplace);
 
       // Plush Royal Blue Velvet Curved Sofa
-      const sofaMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.7 });
+      const sofaMat = materialLib.getWallMaterial(0x1e3a8a, 0.7, 0.05);
       const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.5, 2.4), sofaMat);
       sofaBase.position.set(0, 0.25, 3);
+      sofaBase.castShadow = true;
       scene.add(sofaBase);
 
       const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.7, 0.4), sofaMat);
       sofaBack.position.set(0, 0.75, 1.8);
       scene.add(sofaBack);
 
-      // Marble & Glass Coffee Table with Gold Trims
+      // Marble & Glass Coffee Table
       const tableGeo = new THREE.BoxGeometry(3.6, 0.4, 1.4);
-      const tableMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.2 });
+      const tableMat = materialLib.getMarbleMaterial(0xffffff);
       const table = new THREE.Mesh(tableGeo, tableMat);
       table.position.set(0, 0.25, 5);
+      table.castShadow = true;
       scene.add(table);
 
       // ==================== 2. TERRACE & INFINITY SKY POOL ====================
-      // Teak Wood Decking
       const deckGeo = new THREE.PlaneGeometry(26, 20);
-      const deckMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 });
+      const deckMat = materialLib.getWoodMaterial('teak');
       const deck = new THREE.Mesh(deckGeo, deckMat);
       deck.rotation.x = -Math.PI / 2;
       deck.position.set(0, -0.02, 20);
+      deck.receiveShadow = true;
       scene.add(deck);
 
-      // Crystal Turquoise Pool
       const poolGeo = new THREE.PlaneGeometry(18, 11);
-      const poolMat = new THREE.MeshStandardMaterial({
-        color: 0x06b6d4,
-        emissive: 0x06b6d4,
-        emissiveIntensity: 0.45,
-        roughness: 0.05,
-        metalness: 0.8,
-        transparent: true,
-        opacity: 0.88
-      });
+      const poolMat = materialLib.getPoolWaterMaterial();
       const poolWater = new THREE.Mesh(poolGeo, poolMat);
       poolWater.rotation.x = -Math.PI / 2;
       poolWater.position.set(0, -0.08, 23);
@@ -322,7 +311,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       // Glass Balustrade Edge
       const glassRailing = new THREE.Mesh(
         new THREE.BoxGeometry(24, 1.2, 0.1), 
-        new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, roughness: 0.05 })
+        materialLib.getGlassMaterial(0xffffff, 0.4)
       );
       glassRailing.position.set(0, 0.6, 28.5);
       scene.add(glassRailing);
@@ -331,23 +320,17 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       for (let i = -4; i <= 4; i++) {
         const h = 45 + (Math.abs(i) * 8);
         const towerGeo = new THREE.BoxGeometry(12, h, 14);
-        const towerMat = new THREE.MeshStandardMaterial({ 
-          color: 0x0f172a, 
-          roughness: 0.2, 
-          metalness: 0.8,
-          emissive: (i % 2 === 0) ? 0x1e3a8a : 0xf59e0b,
-          emissiveIntensity: 0.35
-        });
+        const towerMat = materialLib.getWallMaterial(0x0f172a, 0.2, 0.8);
         const tower = new THREE.Mesh(towerGeo, towerMat);
         tower.position.set(i * 22, h / 2 - 15, 60);
         scene.add(tower);
       }
 
       // ==================== 3. MASTER BEDROOM KING SUITE ====================
-      const bedFloorMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.4 }); // Warm Oak
-      const bedFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), bedFloorMat);
+      const bedFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), materialLib.getWoodMaterial('oak'));
       bedFloor.rotation.x = -Math.PI / 2;
       bedFloor.position.set(-14, 0, 2);
+      bedFloor.receiveShadow = true;
       scene.add(bedFloor);
 
       const bedCeiling = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), ceilingMat);
@@ -359,26 +342,26 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       bedLight.position.set(-14, 3.5, 2);
       scene.add(bedLight);
 
-      // King Size Bed with Satin Linens & Golden Accents
-      const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.55, 4.6), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+      // King Size Bed
+      const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.55, 4.6), materialLib.getStuccoMaterial(0x475569));
       bedFrame.position.set(-14, 0.28, 4);
       scene.add(bedFrame);
 
-      const mattress = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 4.2), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 4.2), materialLib.getStuccoMaterial(0xffffff));
       mattress.position.set(-14, 0.75, 4);
       scene.add(mattress);
 
       const satinDuvet = new THREE.Mesh(
         new THREE.BoxGeometry(4.25, 0.15, 2.8), 
-        new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.6, roughness: 0.3 })
+        materialLib.getMetalMaterial('gold')
       );
       satinDuvet.position.set(-14, 0.98, 3.2);
       scene.add(satinDuvet);
 
-      // Armored Vault Safe with Shiny 24K Gold Bars
+      // Armored Vault Safe with 24K Gold Bars
       const safe = new THREE.Mesh(
         new THREE.BoxGeometry(1.8, 2.4, 1.5), 
-        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95, roughness: 0.1 })
+        materialLib.getMetalMaterial('darkSteel')
       );
       safe.position.set(-18, 1.2, -2);
       scene.add(safe);
@@ -386,18 +369,18 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       for (let g = 0; g < 4; g++) {
         const goldBar = new THREE.Mesh(
           new THREE.BoxGeometry(0.8, 0.25, 0.4), 
-          new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.99, roughness: 0.05 })
+          materialLib.getMetalMaterial('gold')
         );
         goldBar.position.set(-18, 0.8 + g * 0.28, -1.8);
         scene.add(goldBar);
       }
 
       // ==================== 4. UNDERGROUND SUPERCAR SHOWROOM ====================
-      // High-Gloss Epoxy Showroom Floor
-      const garageFloorMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.08, metalness: 0.85 });
+      const garageFloorMat = materialLib.getMetalMaterial('darkSteel');
       const garageFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 18), garageFloorMat);
       garageFloor.rotation.x = -Math.PI / 2;
       garageFloor.position.set(14, 0, 0);
+      garageFloor.receiveShadow = true;
       scene.add(garageFloor);
 
       const garageCeiling = new THREE.Mesh(new THREE.PlaneGeometry(14, 18), ceilingMat);
@@ -405,30 +388,29 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
       garageCeiling.position.set(14, 4.2, 0);
       scene.add(garageCeiling);
 
-      // Hexagon LED Grid Lighting on Ceiling
       const hexLight = new THREE.PointLight(0x38bdf8, 5.0, 20);
       hexLight.position.set(14, 3.6, 2);
       scene.add(hexLight);
 
-      // Revolving Supercar Turntable
+      // Revolving Platform
       const platform = new THREE.Mesh(
         new THREE.CylinderGeometry(3.8, 3.8, 0.2, 32), 
-        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.95, roughness: 0.1 })
+        materialLib.getMetalMaterial('chrome')
       );
       platform.position.set(14, 0.1, 2);
       scene.add(platform);
 
-      // Hypercar on Display (Ferrari Red)
+      // Hypercar on Display
       const showCar = new THREE.Mesh(
         new THREE.BoxGeometry(2.0, 0.65, 4.4), 
-        new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.95, roughness: 0.1 })
+        materialLib.getCarPaintMaterial('#dc2626', 0.95, 0.1)
       );
       showCar.position.set(14, 0.55, 2);
       scene.add(showCar);
 
       const showCarCabin = new THREE.Mesh(
         new THREE.BoxGeometry(1.5, 0.45, 2.0), 
-        new THREE.MeshStandardMaterial({ color: 0x090d16, transparent: true, opacity: 0.8 })
+        materialLib.getGlassMaterial(0x090d16, 0.8)
       );
       showCarCabin.position.set(14, 0.95, 1.8);
       scene.add(showCarCabin);
@@ -525,7 +507,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
               soundManager.playClick();
               onClose();
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 text-amber-400" />
             <span className="font-semibold text-sm">Thoát Tham Quan</span>
@@ -553,7 +535,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
               soundManager.playClick();
               setLightingMode(prev => prev === 'warm' ? 'cyber' : prev === 'cyber' ? 'day' : 'warm');
             }}
-            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700/60 backdrop-blur-md transition-all text-xs font-bold flex items-center gap-1.5"
+            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700/60 backdrop-blur-md transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             title="Đổi phong cách ánh sáng"
           >
             <Sun className="w-4 h-4" />
@@ -565,7 +547,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
               soundManager.playClick();
               setShowDeed(!showDeed);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black font-extrabold text-xs shadow-lg transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
           >
             <Award className="w-4 h-4" />
             <span>Sổ Đỏ Bất Động Sản</span>
@@ -573,7 +555,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
 
           <button
             onClick={() => setIsMusicPlaying(!isMusicPlaying)}
-            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all"
+            className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 backdrop-blur-md transition-all cursor-pointer"
           >
             {isMusicPlaying ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
           </button>
@@ -590,7 +572,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
             <button
               key={rKey}
               onClick={() => teleportToRoom(rKey)}
-              className={`w-full py-2 px-3 rounded-xl text-xs font-semibold text-left transition-all flex items-center justify-between ${
+              className={`w-full py-2 px-3 rounded-xl text-xs font-semibold text-left transition-all flex items-center justify-between cursor-pointer ${
                 currentRoom === rKey 
                   ? 'bg-amber-500 text-black font-bold shadow-md' 
                   : 'bg-slate-900/90 text-slate-200 hover:bg-slate-800'
@@ -658,7 +640,7 @@ export const HouseTour3D: React.FC<HouseTour3DProps> = ({ item, onClose }) => {
             <div className="pt-2">
               <button
                 onClick={() => setShowDeed(false)}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs shadow-lg active:scale-95"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs shadow-lg active:scale-95 cursor-pointer"
               >
                 Đóng Sổ Đỏ
               </button>
