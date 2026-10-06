@@ -225,7 +225,7 @@ export const DrivingSimulator3D: React.FC<DrivingSimulator3DProps> = ({ item, on
 
         // Update Camera
         if (cameraRef.current) {
-          controllerRef.current.updateCamera(cameraRef.current, vehicleDataRef.current.root, cameraMode);
+          controllerRef.current.updateCamera(cameraRef.current, vehicleDataRef.current.root, cameraMode, delta);
         }
 
         // Update audio engine

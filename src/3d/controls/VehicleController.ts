@@ -41,7 +41,7 @@ export class VehicleController {
   constructor(config: VehiclePhysicsConfig) {
     this.config = config;
     this.state = {
-      currentSpeed: 65, // Start rolling with brisk highway speed immediately
+      currentSpeed: 70, // Start rolling with brisk highway speed immediately
       maxSpeed: config.topSpeed || 300,
       steeringYaw: 0,
       rollAngle: 0,
@@ -52,7 +52,7 @@ export class VehicleController {
       isNitro: false,
       isBraking: false,
       isDrifting: false,
-      rpm: 2500,
+      rpm: 2800,
       gear: '2'
     };
 
@@ -74,10 +74,12 @@ export class VehicleController {
       // Clear steering keys but keep rolling momentum
       this.keysPressed['a'] = false;
       this.keysPressed['d'] = false;
+      this.keysPressed['q'] = false;
       this.keysPressed['arrowleft'] = false;
       this.keysPressed['arrowright'] = false;
       this.keysPressed['KeyA'] = false;
       this.keysPressed['KeyD'] = false;
+      this.keysPressed['KeyQ'] = false;
       this.keysPressed['ArrowLeft'] = false;
       this.keysPressed['ArrowRight'] = false;
       this.keysPressed['shift'] = false;
@@ -97,20 +99,24 @@ export class VehicleController {
     const k = key.toLowerCase();
     this.keysPressed[k] = isDown;
     this.keysPressed[key] = isDown;
-    if (k === 'a' || k === 'arrowleft') {
+    if (k === 'a' || k === 'arrowleft' || k === 'q') {
       this.keysPressed['a'] = isDown;
+      this.keysPressed['q'] = isDown;
       this.keysPressed['arrowleft'] = isDown;
       this.keysPressed['KeyA'] = isDown;
+      this.keysPressed['KeyQ'] = isDown;
       this.keysPressed['ArrowLeft'] = isDown;
     } else if (k === 'd' || k === 'arrowright') {
       this.keysPressed['d'] = isDown;
       this.keysPressed['arrowright'] = isDown;
       this.keysPressed['KeyD'] = isDown;
       this.keysPressed['ArrowRight'] = isDown;
-    } else if (k === 'w' || k === 'arrowup') {
+    } else if (k === 'w' || k === 'arrowup' || k === 'z') {
       this.keysPressed['w'] = isDown;
+      this.keysPressed['z'] = isDown;
       this.keysPressed['arrowup'] = isDown;
       this.keysPressed['KeyW'] = isDown;
+      this.keysPressed['KeyZ'] = isDown;
       this.keysPressed['ArrowUp'] = isDown;
     } else if (k === 's' || k === 'arrowdown') {
       this.keysPressed['s'] = isDown;
@@ -135,9 +141,9 @@ export class VehicleController {
    */
   public update(delta: number, vehicleData: VehicleBuildResult): void {
     const keys = this.keysPressed;
-    const isUp = keys['w'] || keys['arrowup'] || keys['KeyW'] || keys['ArrowUp'] || keys['W'];
+    const isUp = keys['w'] || keys['arrowup'] || keys['KeyW'] || keys['ArrowUp'] || keys['W'] || keys['z'] || keys['KeyZ'] || keys['Z'];
     const isDown = keys['s'] || keys['arrowdown'] || keys['KeyS'] || keys['ArrowDown'] || keys['S'];
-    const isLeft = keys['a'] || keys['arrowleft'] || keys['KeyA'] || keys['ArrowLeft'] || keys['A'];
+    const isLeft = keys['a'] || keys['arrowleft'] || keys['KeyA'] || keys['ArrowLeft'] || keys['A'] || keys['q'] || keys['KeyQ'] || keys['Q'];
     const isRight = keys['d'] || keys['arrowright'] || keys['KeyD'] || keys['ArrowRight'] || keys['D'];
     const isSpace = keys[' '] || keys['Space'];
     const isShift = keys['shift'] || keys['ShiftLeft'] || keys['ShiftRight'] || keys['Shift'];
@@ -153,8 +159,8 @@ export class VehicleController {
 
     const nitroBoost = this.state.isNitro ? 1.85 : 1.0;
     const effectiveMaxSpeed = this.state.maxSpeed * (this.state.isNitro ? 1.25 : 1.0);
-    const accelRate = (500 / Math.max(1.5, this.config.acceleration)) * 0.06;
-    const cruiseSpeed = 50; // Natural highway cruising idle speed
+    const accelRate = (500 / Math.max(1.5, this.config.acceleration)) * 0.07;
+    const cruiseSpeed = 55; // Natural highway cruising speed
 
     // 2. Longitudinal Acceleration & Braking
     if (isUp || this.state.isNitro) {
@@ -166,33 +172,33 @@ export class VehicleController {
     } else if (isDown) {
       // Braking or reversing
       if (this.state.currentSpeed > 5) {
-        this.state.currentSpeed *= Math.pow(0.92, delta * 60); // Strong braking
+        this.state.currentSpeed *= Math.pow(0.90, delta * 60); // Strong braking
       } else {
-        this.state.currentSpeed = Math.max(-30, this.state.currentSpeed - delta * 40); // Reverse gear
+        this.state.currentSpeed = Math.max(-35, this.state.currentSpeed - delta * 45); // Reverse gear
       }
     } else if (isSpace) {
       // Handbrake
-      this.state.currentSpeed *= Math.pow(0.88, delta * 60);
+      this.state.currentSpeed *= Math.pow(0.85, delta * 60);
     } else {
       // Natural rolling momentum towards cruise speed (never completely dead unless braked)
       if (this.state.currentSpeed < cruiseSpeed) {
-        this.state.currentSpeed = THREE.MathUtils.lerp(this.state.currentSpeed, cruiseSpeed, delta * 1.5);
+        this.state.currentSpeed = THREE.MathUtils.lerp(this.state.currentSpeed, cruiseSpeed, delta * 2.0);
       } else {
-        this.state.currentSpeed = THREE.MathUtils.lerp(this.state.currentSpeed, cruiseSpeed, delta * 0.4);
+        this.state.currentSpeed = THREE.MathUtils.lerp(this.state.currentSpeed, cruiseSpeed, delta * 0.5);
       }
     }
 
     this.state.isBraking = isDown || isSpace;
 
     // 3. Lateral Steering & Turning Dynamics
-    // Target steer input: Left = -1 (moves to -X), Right = +1 (moves to +X)
+    // Target steer input: Left = -1 (strictly moves to -X / Left), Right = +1 (strictly moves to +X / Right)
     let targetSteer = 0;
     if (isLeft) targetSteer -= 1;
     if (isRight) targetSteer += 1;
 
-    const speedMag = Math.max(15, Math.abs(this.state.currentSpeed));
-    const speedSteerFactor = Math.min(1.0, speedMag / 40);
-    const steerSpeed = (this.config.handling / 10) * 12.0 * speedSteerFactor * delta;
+    const speedMag = Math.max(20, Math.abs(this.state.currentSpeed));
+    const speedSteerFactor = Math.min(1.0, speedMag / 35);
+    const steerSpeed = (this.config.handling / 10) * 15.0 * speedSteerFactor * delta;
 
     // Lateral position on road (-9.5 to +9.5)
     if (targetSteer !== 0) {
@@ -203,25 +209,25 @@ export class VehicleController {
     // Vehicle Heading Yaw Angle:
     // Left (targetSteer = -1) => Negative yaw (points vehicle nose to the left / -X)
     // Right (targetSteer = +1) => Positive yaw (points vehicle nose to the right / +X)
-    const targetYaw = targetSteer * (this.config.isBike ? 0.22 : 0.26);
-    this.state.steeringYaw = THREE.MathUtils.lerp(this.state.steeringYaw, targetYaw, delta * 12);
+    const targetYaw = targetSteer * (this.config.isBike ? 0.18 : 0.15);
+    this.state.steeringYaw = THREE.MathUtils.lerp(this.state.steeringYaw, targetYaw, delta * 18);
 
     // Chassis Roll / Banking Angle into curves:
     // Left turn => Lean Left
     // Right turn => Lean Right
-    const targetRoll = -targetSteer * (this.config.isBike ? 0.35 : 0.07);
-    this.state.rollAngle = THREE.MathUtils.lerp(this.state.rollAngle, targetRoll, delta * 10);
+    const targetRoll = -targetSteer * (this.config.isBike ? 0.30 : 0.05);
+    this.state.rollAngle = THREE.MathUtils.lerp(this.state.rollAngle, targetRoll, delta * 15);
 
     // Front Wheels Visual Steer Angle
-    const targetWheelAngle = targetSteer * 0.45;
-    this.state.wheelSteerAngle = THREE.MathUtils.lerp(this.state.wheelSteerAngle, targetWheelAngle, delta * 15);
+    const targetWheelAngle = targetSteer * 0.38;
+    this.state.wheelSteerAngle = THREE.MathUtils.lerp(this.state.wheelSteerAngle, targetWheelAngle, delta * 20);
 
     // Drift Detection
-    this.state.isDrifting = Math.abs(targetSteer) > 0 && speedMag > 70;
+    this.state.isDrifting = Math.abs(targetSteer) > 0 && speedMag > 75;
 
     // 4. Apply Transforms to 3D Vehicle Root & Moving Components
     const root = vehicleData.root;
-    root.position.x = THREE.MathUtils.lerp(root.position.x, this.state.posX, delta * 18);
+    root.position.x = this.state.posX;
     root.rotation.y = this.state.steeringYaw;
     root.rotation.z = this.state.rollAngle;
 
@@ -280,26 +286,28 @@ export class VehicleController {
   public updateCamera(
     camera: THREE.PerspectiveCamera,
     vehicleRoot: THREE.Group,
-    mode: 'chase' | 'cockpit' | 'top'
+    mode: 'chase' | 'cockpit' | 'top',
+    delta: number = 0.016
   ): void {
     const vPos = vehicleRoot.position;
     const speedRatio = Math.min(1.0, Math.abs(this.state.currentSpeed) / this.state.maxSpeed);
 
     if (mode === 'chase') {
-      const shake = (Math.random() - 0.5) * speedRatio * 0.06;
-      // Camera stays directly behind the vehicle with slight smooth lag
-      const targetCamX = vPos.x;
-      const targetCamY = (this.config.isBike ? 2.4 : 2.0) + speedRatio * 0.2 + shake;
-      const targetCamZ = -6.2 - speedRatio * 1.5;
+      const shake = (Math.random() - 0.5) * speedRatio * 0.04;
+      // Camera stays smoothly aligned behind the vehicle's lateral lane position
+      const targetCamX = this.state.posX * 0.75;
+      const targetCamY = (this.config.isBike ? 2.5 : 2.1) + speedRatio * 0.2 + shake;
+      const targetCamZ = -6.4 - speedRatio * 1.6;
 
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, 0.15);
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 0.15);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.15);
+      const lerpSpeed = Math.min(1.0, delta * 15);
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, lerpSpeed);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, lerpSpeed);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, lerpSpeed);
 
-      // Look straight ahead along the car's path and into the apex of the turn
-      const lookTargetX = vPos.x + this.state.steeringYaw * 4.0;
-      const lookTargetY = vPos.y + (this.config.isBike ? 1.0 : 0.7);
-      const lookTargetZ = vPos.z + 18.0;
+      // Camera aims along the lane directly ahead of the car
+      const lookTargetX = this.state.posX * 0.5;
+      const lookTargetY = vPos.y + (this.config.isBike ? 1.0 : 0.75);
+      const lookTargetZ = vPos.z + 24.0;
 
       camera.lookAt(lookTargetX, lookTargetY, lookTargetZ);
       camera.fov = 60 + speedRatio * 12 + (this.state.isNitro ? 8 : 0);
@@ -311,14 +319,14 @@ export class VehicleController {
         vPos.y + (this.config.isBike ? 1.45 : 1.15),
         vPos.z + (this.config.isBike ? 0.3 : 0.2)
       );
-      camera.lookAt(vPos.x + this.state.steeringYaw * 8.0, vPos.y + 0.9, vPos.z + 30);
+      camera.lookAt(vPos.x + (this.config.isBike ? 0 : -0.35), vPos.y + 0.9, vPos.z + 30);
       camera.fov = 70 + speedRatio * 10;
       camera.updateProjectionMatrix();
 
     } else {
       // Top / Drone View
-      camera.position.set(vPos.x * 0.6, 16, vPos.z - 4);
-      camera.lookAt(vPos.x * 0.6, 0, vPos.z + 10);
+      camera.position.set(vPos.x * 0.4, 16, vPos.z - 4);
+      camera.lookAt(vPos.x * 0.4, 0, vPos.z + 10);
       camera.fov = 60;
       camera.updateProjectionMatrix();
     }
